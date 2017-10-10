@@ -23,6 +23,8 @@
 
 #include "accelerationd.h"
 
+#define TIME_INTERVAL  200
+
 static int effective_linaccel_sensor = -1;
 
 
@@ -35,8 +37,39 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device);
 
 void daemon_mode(void)
 {
-	/* Fill in */
-	return;
+	pid_t pid,sid;
+
+	pid = fork();
+
+	if (pid < 0){
+		printf("Fork failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if (pid > 0){
+		exit(EXIT_SUCCESS);
+	}
+
+	umask(0);
+
+	int flog = open("./acceleration_log.txt",O_WRONLY | O_APPEND | O_CREAT);
+
+	sid = setsid();
+	if (sid < 0){
+		printf("Set sid failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if (chdir("/") < 0){
+		printf("Change directory failed\n");
+		exit(EXIT_FAILURE);
+	}
+
+	dup2(flog,1);
+	close(0);
+	close(2);
+
+	return 0;
 }
 
 int main(int argc, char **argv)
@@ -67,6 +100,7 @@ int main(int argc, char **argv)
 emulation:
 		poll_sensor_data(sensors_device);
 		/* TODO: Define time interval and call usleep */
+		usleep(TIME_INTERVAL);
 	}
 
 	return EXIT_SUCCESS;
@@ -97,7 +131,7 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 		 * TODO: You have the acceleration here - scale it and
 		 * send it to kernel
 		 */
-		}
+		
 	}
 	return err;
 }
