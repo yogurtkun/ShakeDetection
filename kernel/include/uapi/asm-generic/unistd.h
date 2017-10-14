@@ -667,6 +667,8 @@ __SYSCALL(__NR_set_acceleration, sys_set_acceleration)
 #define __NR_accevt_signal 252
 __SYSCALL(__NR_accevt_signal,sys_accevt_signal)
 
+#define __NR_accevt_create 250
+__SYSCALL(__NR_accevt_create, sys_accevt_create)
 
 
 #define __NR_wait4 260

@@ -122,8 +122,16 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
  */
 
 
+
+#include <linux/kernel.h>
+#include <linux/slab.h>
+#include <linux/list.h>
+
 static struct dev_acceleration acc;
 DEFINE_RWLOCK(lock);
+
+static LIST_HEAD(event_list);
+DEFINE_RWLOCK(el_rwlock);
 
 /**
  * sys_set_acceleration - set the current device acceleration
@@ -149,4 +157,40 @@ SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, acceleration
 	write_unlock(&lock);
 
 	return 0;
+}
+
+/**
+ * sys_accevt_create - Create an event based on motion.
+ */
+
+// int accevt_create(struct acc_motion __user *acceleration);
+SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
+{
+	/* find an available event id */
+	int eid;
+	struct motion_event *e;
+	for (eid = 0; eid < INT_MAX; ++eid) {
+		int found = 1;
+		list_for_each_entry(e, &event_list, list) {
+			if (eid == e->eid) {
+				found = 0;
+				break;
+			}
+		}
+		if (found)
+			break;
+	}
+
+	/* construct the struct event*/
+	e = kmalloc(sizeof(struct motion_event), GFP_KERNEL);
+	e->eid = eid;
+	e->triggered = 0;
+	e->baseline = kmalloc(sizeof(struct acc_motion), GFP_KERNEL);
+	INIT_LIST_HEAD(&e->list);
+	if (copy_from_user(e->baseline, acceleration, sizeof(struct acc_motion)))
+		return -EFAULT;
+
+	/* add the node to the linked list */
+	list_add(&e->list, &event_list);
+	return eid;
 }
