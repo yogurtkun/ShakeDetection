@@ -77,7 +77,7 @@ struct sigaltstack;
 #include <linux/quota.h>
 #include <linux/key.h>
 #include <trace/syscall.h>
-#include <linux/accelerationd.h>
+#include <linux/acceleration.h>
 
 /*
  * __MAP - apply a macro to syscall arguments
@@ -862,4 +862,5 @@ asmlinkage long sys_seccomp(unsigned int op, unsigned int flags,
 			    const char __user *uargs);
 
 asmlinkage long sys_set_acceleration(struct dev_acceleration __user * acceleration);
+asmlinkage long sys_accevt_create(struct acc_motion __user * accleration);
 #endif
