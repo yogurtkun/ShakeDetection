@@ -54,9 +54,6 @@
 #include <asm/tlb.h>
 #include <asm/irq_regs.h>
 #include <asm/mutex.h>
-#ifdef CONFIG_PARAVIRT
-#include <asm/paravirt.h>
-#endif
 
 #include "workqueue_internal.h"
 #include "smpboot.h"
@@ -116,6 +113,40 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 
 	kfree(test);
 
+/**
+ * kernel/kernel/acceleration.c
+ *
+ * polls the accelerometer in the user space
+ *
+ * and writes it to the kernel
+ */
+
+
+static struct dev_acceleration acc;
+DEFINE_RWLOCK(lock);
+
+/**
+ * sys_set_acceleration - set the current device acceleration
+ * @pid: pid of the process
+ * @len: length in bytes of the bitmask pointed to by user_mask_ptr
+ * @user_mask_ptr: user-space pointer to the new cpu mask
+ */
+
+SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, acceleration)
+{
+	
+	struct dev_acceleration *tmp;
+
+	if (current_uid()!=0) {
+		return -EACCES;
+	}
+
+	if(copy_from_user(tmp, acceleration, sizeof(struct dev_acceleration)))
+		return -EFAULT;
+
+	write_lock(&lock);
+	memcpy(&acc, tmp, sizeof(struct dev_acceleration));
+	write_unlock(&lock);
 
 	return 0;
 }

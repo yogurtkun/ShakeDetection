@@ -4,6 +4,14 @@
 #define NOISE 10
 #define WINDOW 20
 
+#define __NR_set_acceleration 249
+#define __NR_accevt_create 250
+#define __NR_accevt_wait 251
+#define __NR_accevt_signal 252
+#define __NR_accevt_destroy 253
+
+#define TIME_INTERVAL  200
+
 
 struct dev_acceleration {
 	int x; /* acceleration along X-axis */
@@ -11,4 +19,6 @@ struct dev_acceleration {
 	int z; /* acceleration along Z-axis */
 }; 
 
+
 #endif
+
