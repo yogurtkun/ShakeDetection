@@ -34,7 +34,7 @@ struct acc_motion {
 struct motion_event {
 	int eid;
 	int triggered; /* indicator for whether the event is signaled */
-	struct *acc_motion baseline;
+	struct acc_motion *baseline;
 	struct list_head list;
 };
 #endif
