@@ -1,5 +1,5 @@
-#ifndef _ACCELERATIOND_H
-#define _ACCELERATIOND_H
+#ifndef _ACCELERATION_H
+#define _ACCELERATION_H
 
 #define NOISE 10
 #define WINDOW 20
@@ -33,7 +33,7 @@ struct acc_motion {
 
 struct motion_event {
 	int eid;
-	int triggered;
+	int triggered; /* indicator for whether the event is signaled */
 	struct *acc_motion baseline;
 	struct list_head list;
 };

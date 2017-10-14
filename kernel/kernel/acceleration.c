@@ -6,18 +6,19 @@
  * and writes it to the kernel
  */
 
-#include <linux/syscall.h>
+#include <linux/syscalls.h>
 #include <linux/acceleration.h>
 #include <linux/cred.h>
-#include <asm-generic/uaccess.h>
+#include <asm/uaccess.h>
 #include <linux/string.h>
 
 #include <linux/list.h>
 
 static struct dev_acceleration acc;
-DEFINE_RWLOCK(mr_rwlock);
+DEFINE_RWLOCK(lock);
 
 static LIST_HEAD(event_list);
+DEFINE_RWLOCK(el_rwlock);
 
 /**
  * sys_set_acceleration - set the current device acceleration
@@ -32,15 +33,15 @@ SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, acceleration
 	struct dev_acceleration *tmp;
 
 	if (current_uid()!=0) {
-		return -EACCESS;
+		return -EACCES;
 	}
 
 	if(copy_from_user(tmp, acceleration, sizeof(struct dev_acceleration)))
 		return -EFAULT;
 
-	write_lock(&mr_rwlock);
+	write_lock(&lock);
 	memcpy(&acc, tmp, sizeof(struct dev_acceleration));
-	write_unlock(&mr_lock);
+	write_unlock(&lock);
 
 	return 0;
 }
@@ -65,7 +66,6 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 		}
 		if (found)
 			break;
-
 	}
 
 	/* construct the struct event*/
