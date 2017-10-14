@@ -1,5 +1,5 @@
-#ifndef _ACCELERATIOND_H
-#define _ACCELERATIOND_H
+#ifndef _ACCELERATION_H
+#define _ACCELERATION_H
 
 /* Please use the same syscall number as indicated in the homework 3 instruction */
 
