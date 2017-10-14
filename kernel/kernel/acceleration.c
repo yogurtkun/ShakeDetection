@@ -98,18 +98,19 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 
 	kfree(acc_data);
 	kfree(del_data);
-	
 
-	struct dev_acceleration * test = kmalloc(sizeof(struct dev_acceleration),GFP_KERNEL);
+
+	struct dev_acceleration * fifo_data = kmalloc(sizeof(struct dev_acceleration)*(WINDOW + 1),GFP_KERNEL);
+	kfifo_out_peek(&acceleration_queue,fifo_data,kfifo_len(&acceleration_queue));
+
+	
 
 	int i = 0;
 
 	for (i = 0 ; i < kfifo_len(&acceleration_queue)/sizeof(struct dev_acceleration) ; i ++)
 	{
 
-		kfifo_out_peek(&acceleration_queue,test,sizeof(struct dev_acceleration));
-
-		printk("%d %d %d\n",test->x,test->y,test->z);
+		printk("%d %d %d\n",test[i].x,test[i].y,test[i].z);
 	}
 	printk("********\n");
 
