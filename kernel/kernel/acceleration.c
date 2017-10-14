@@ -73,6 +73,7 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 	e->eid = eid;
 	e->triggered = 0;
 	e->baseline = kmalloc(sizeof(struct acc_motion), GFP_KERNEL);
+	INIT_LIST_HEAD(&e->list);
 	if (copy_from_user(e->baseline, accleration, sizeof(struct acc_motion)))
 		return -EFAULT;
 
