@@ -12,6 +12,8 @@
 #include <asm/uaccess.h>
 #include <linux/string.h>
 
+#include <linux/kernel.h>
+#include <linux/slab.h>
 #include <linux/list.h>
 
 static struct dev_acceleration acc;
@@ -56,7 +58,7 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 	/* find an available event id */
 	int eid;
 	struct motion_event *e;
-	for (eid = 0; eid < MAX_INT; ++eid) {
+	for (eid = 0; eid < INT_MAX; ++eid) {
 		int found = 1;
 		list_for_each_entry(e, &event_list, list) {
 			if (eid == e->eid) {
@@ -74,7 +76,7 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 	e->triggered = 0;
 	e->baseline = kmalloc(sizeof(struct acc_motion), GFP_KERNEL);
 	INIT_LIST_HEAD(&e->list);
-	if (copy_from_user(e->baseline, accleration, sizeof(struct acc_motion)))
+	if (copy_from_user(e->baseline, acceleration, sizeof(struct acc_motion)))
 		return -EFAULT;
 
 	/* add the node to the linked list */

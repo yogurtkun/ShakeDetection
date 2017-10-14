@@ -29,12 +29,13 @@ int main(int argc, char const *argv[])
 	baseline.dlt_x = 0;
 	baseline.dlt_x = 1;
 	baseline.dlt_x = 2;
-	for (int i = 0; i < 30; ++i)
+	int i;
+	for (i = 0; i < 30; ++i)
 	{
 		baseline.dlt_x = 0;
 		baseline.dlt_x = 1;
 		baseline.dlt_x = 2;
-		int eid = syscall(__NR_accevt_create, &data);
+		int eid = syscall(__NR_accevt_create, &baseline);
 		printf("%d\n", eid);
 	}
 
