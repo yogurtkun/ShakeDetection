@@ -202,6 +202,8 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 	rwlock_init(&e->rwlock);
 	if (copy_from_user(e->baseline, acceleration, sizeof(struct acc_motion)))
 		return -EFAULT;
+	if (e->baseline->frq > WINDOW)
+		e->baseline->frq = WINDOW;
 
 	/* add the node to the linked list */
 	write_lock(&event_list_lock);
