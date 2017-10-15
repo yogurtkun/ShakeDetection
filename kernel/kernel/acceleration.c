@@ -196,8 +196,10 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 	e->triggered = 0;
 	e->destroyed = 0;
 	atomic_set(&e->ref_count, 0);
+	init_waitqueue_head(&e->wait_queue);
 	e->baseline = kmalloc(sizeof(struct acc_motion), GFP_KERNEL);
 	INIT_LIST_HEAD(&e->list);
+	rwlock_init(&e->rwlock);
 	if (copy_from_user(e->baseline, acceleration, sizeof(struct acc_motion)))
 		return -EFAULT;
 

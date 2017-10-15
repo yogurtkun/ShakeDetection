@@ -35,8 +35,10 @@ struct motion_event {
 	int triggered; /* indicator for whether the event is signaled */
 	int destroyed; /* indicating whether the event is being destroyed */
 	atomic_t ref_count; /* how many processes is waiting for this event */
+	wait_queue_head_t wait_queue;
 	struct acc_motion *baseline;
 	struct list_head list;
+	rwlock_t rwlock;
 };
 #endif
 
