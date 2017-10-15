@@ -64,9 +64,12 @@
 
 #include <linux/slab.h>
 #include <linux/list.h>
+#include <linux/types.h>
 
 static struct kfifo acceleration_queue;
 static DEFINE_RWLOCK(acceleration_q_lock);
+
+static DEFINE_RWLOCK(event_list_lock);
 
 SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 
@@ -173,6 +176,7 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 	/* find an available event id */
 	int eid;
 	struct motion_event *e;
+	read_lock(&event_list_lock);
 	for (eid = 0; eid < INT_MAX; ++eid) {
 		int found = 1;
 		list_for_each_entry(e, &event_list, list) {
@@ -184,17 +188,22 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 		if (found)
 			break;
 	}
+	read_unlock(&event_list_lock);
 
 	/* construct the struct event*/
 	e = kmalloc(sizeof(struct motion_event), GFP_KERNEL);
 	e->eid = eid;
 	e->triggered = 0;
+	e->destroyed = 0;
+	atomic_set(&e->ref_count, 0);
 	e->baseline = kmalloc(sizeof(struct acc_motion), GFP_KERNEL);
 	INIT_LIST_HEAD(&e->list);
 	if (copy_from_user(e->baseline, acceleration, sizeof(struct acc_motion)))
 		return -EFAULT;
 
 	/* add the node to the linked list */
+	write_lock(&event_list_lock);
 	list_add(&e->list, &event_list);
+	write_unlock(&event_list_lock);
 	return eid;
 }
