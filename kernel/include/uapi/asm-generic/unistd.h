@@ -664,11 +664,15 @@ __SC_COMP(__NR_recvmmsg, sys_recvmmsg, compat_sys_recvmmsg)
 #define __NR_set_acceleration 249
 __SYSCALL(__NR_set_acceleration, sys_set_acceleration)
 
+#define __NR_accevt_create 250
+__SYSCALL(__NR_accevt_create, sys_accevt_create)
+
+#define __NR_accevt_wait 251
+__SYSCALL(__NR_accevt_wait,sys_accevt_wait)
+
 #define __NR_accevt_signal 252
 __SYSCALL(__NR_accevt_signal,sys_accevt_signal)
 
-#define __NR_accevt_create 250
-__SYSCALL(__NR_accevt_create, sys_accevt_create)
 
 
 #define __NR_wait4 260

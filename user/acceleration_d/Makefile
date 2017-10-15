@@ -1,8 +1,8 @@
 # TARGET=accelerationd
 # SOURCES=accelerationd.c
 
-TARGET=test
-SOURCES=test.c
+TARGET=test_251
+SOURCES=test_251.c
 
 
 # You probably don't need to change below
@@ -15,7 +15,7 @@ SYSROOT=--sysroot=../sysroot
 
 CC=aarch64-linux-android-gcc
 
-INCLUDE=-I../aosp/system/core/include -I../aosp/hardware/libhardware/include
+INCLUDE=-I../aosp/system/core/include -I../aosp/hardware/libhardware/include 
 
 LDLIBS=-L../sysroot/lib64 -lhardware -lm -llog -lcutils -lc++
 

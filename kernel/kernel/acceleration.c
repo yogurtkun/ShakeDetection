@@ -69,21 +69,27 @@
 static struct kfifo acceleration_queue;
 static DEFINE_RWLOCK(acceleration_q_lock);
 
+static LIST_HEAD(event_list);
 static DEFINE_RWLOCK(event_list_lock);
 
 SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 
+	printk("Hello from parent-2\n");
 	/*Check the privilegios*/
 	if (current_cred()->uid != 0)
 	{
 		return -EACCES;
 	}
 
+	printk("Hello from parent-1\n");
+
 	if (!kfifo_initialized(&acceleration_queue)){
-		if (! kfifo_alloc(&acceleration_queue,sizeof(struct dev_acceleration)* (WINDOW+1),GFP_KERNEL) ){
+		if (kfifo_alloc(&acceleration_queue,sizeof(struct dev_acceleration)* (WINDOW+1),GFP_KERNEL) ){
 			return -ENOMEM;
 		}
 	}
+
+	printk("Hello from parent0\n");
 
 	struct dev_acceleration * acc_data = kmalloc(sizeof(struct dev_acceleration),GFP_KERNEL);
 	struct dev_acceleration * del_data = kmalloc(sizeof(struct dev_acceleration),GFP_KERNEL);
@@ -101,6 +107,8 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 
 	write_unlock(&acceleration_q_lock);
 
+	printk("Hello from parent1\n");
+
 	kfree(acc_data);
 	kfree(del_data);
 
@@ -111,19 +119,28 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	kfifo_out_peek(&acceleration_queue,fifo_data,kfifo_len(&acceleration_queue));
 	read_unlock(&acceleration_q_lock);
 
-	
-
 	/*This is test program*/
-	int i = 0;
+	// int i = 0;
 
-	for (i = 0 ; i < kfifo_len(&acceleration_queue)/sizeof(struct dev_acceleration) ; i ++)
-	{
+	// for (i = 0 ; i < kfifo_len(&acceleration_queue)/sizeof(struct dev_acceleration) ; i ++)
+	// {
 
-		printk("%d %d %d\n",fifo_data[i].x,fifo_data[i].y,fifo_data[i].z);
+	// 	printk("%d %d %d\n",fifo_data[i].x,fifo_data[i].y,fifo_data[i].z);
+	// }
+	// printk("********\n");
+
+	struct motion_event * e;
+	list_for_each_entry(e,&event_list,list){
+		if (e->eid == 0)
+			break;
 	}
-	printk("********\n");
 
 	kfree(fifo_data);
+
+	printk("Hello from parent\n");
+
+	e->triggered = 1;
+	wake_up(&e->wait_queue);
 }
 /**
  * kernel/kernel/acceleration.c
@@ -167,8 +184,6 @@ SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, acceleration
  * sys_accevt_create - Create an event based on motion.
  */
 
-static LIST_HEAD(event_list);
-DEFINE_RWLOCK(el_rwlock);
 
 // int accevt_create(struct acc_motion __user *acceleration);
 SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
@@ -210,4 +225,84 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 	list_add(&e->list, &event_list);
 	write_unlock(&event_list_lock);
 	return eid;
+}
+
+struct motion_event * find_event(int event_id){
+	struct motion_event * e;
+	list_for_each_entry(e,&event_list,list){
+		if (e->eid == event_id)
+			return e;
+	}
+	return NULL;
+}
+
+/* Block a process on an event.
+ * It takes the event_id as parameter. The event_id requires verification.
+ * Return 0 on success and the appropriate error on failure.
+ * system call number 251
+ */
+
+SYSCALL_DEFINE1(accevt_wait, int , event_id){
+
+	read_lock(&event_list_lock);
+	struct motion_event * wait_event = find_event(event_id);
+	read_unlock(&event_list_lock);
+
+	if (wait_event == NULL)
+	{
+		return -EINVAL;
+	}
+
+	DEFINE_WAIT(wait);
+
+	write_lock(&wait_event->rwlock);
+	add_wait_queue(&wait_event->wait_queue,&wait);
+	atomic_inc(&wait_event->ref_count);
+	write_unlock(&wait_event->rwlock);
+
+	printk("Hello from child to start\n");
+
+	while(1){
+
+		read_lock(&wait_event->rwlock);
+		if (wait_event->triggered){
+			read_unlock(&wait_event->rwlock);
+			break;
+		}
+		read_unlock(&wait_event->rwlock);
+
+		prepare_to_wait(&wait_event->wait_queue,&wait,TASK_INTERRUPTIBLE);
+		schedule();
+	}
+
+	printk("Hello from child end\n");
+
+	write_lock(&event_list_lock);
+	write_lock(&wait_event->rwlock);
+	finish_wait(&wait_event->wait_queue,&wait);
+
+	atomic_dec(&wait_event->ref_count);
+	int ref_times = atomic_read(&wait_event->ref_count);
+
+
+	if (wait_event->destroyed && ref_times == 0){
+		list_del(&wait_event->list);
+		kfree(wait_event->baseline);
+		kfree(wait_event);
+
+		write_unlock(&wait_event->rwlock);
+		write_unlock(&event_list_lock);
+
+		return -EINVAL;
+	}
+	else{
+		write_unlock(&wait_event->rwlock);
+		write_unlock(&event_list_lock);
+
+		printk("Exit success!\n");
+
+		return 0;
+	}
+
+	return 0;
 }
