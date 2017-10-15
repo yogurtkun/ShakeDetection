@@ -103,10 +103,14 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 
 
 	struct dev_acceleration * fifo_data = kmalloc(sizeof(struct dev_acceleration)*(WINDOW + 1),GFP_KERNEL);
+
+	read_lock(&acceleration_q_lock);
 	kfifo_out_peek(&acceleration_queue,fifo_data,kfifo_len(&acceleration_queue));
+	read_unlock(&acceleration_q_lock);
 
 	
 
+	/*This is test program*/
 	int i = 0;
 
 	for (i = 0 ; i < kfifo_len(&acceleration_queue)/sizeof(struct dev_acceleration) ; i ++)
@@ -129,9 +133,6 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 
 static struct dev_acceleration acc;
 DEFINE_RWLOCK(lock);
-
-static LIST_HEAD(event_list);
-DEFINE_RWLOCK(el_rwlock);
 
 /**
  * sys_set_acceleration - set the current device acceleration
@@ -162,6 +163,9 @@ SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, acceleration
 /**
  * sys_accevt_create - Create an event based on motion.
  */
+
+static LIST_HEAD(event_list);
+DEFINE_RWLOCK(el_rwlock);
 
 // int accevt_create(struct acc_motion __user *acceleration);
 SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
