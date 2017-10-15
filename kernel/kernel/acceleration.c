@@ -295,13 +295,22 @@ SYSCALL_DEFINE1(accevt_wait, int , event_id){
 
 		return -EINVAL;
 	}
-	else{
+	else if(ref_times == 0){
+		wait_event->triggered = 0;
+
 		write_unlock(&wait_event->rwlock);
 		write_unlock(&event_list_lock);
 
-		printk("Exit success!\n");
+		printk("Exit success!!!!\n");
 
 		return 0;
+	}
+	else{
+
+		write_unlock(&wait_event->rwlock);
+		write_unlock(&event_list_lock);	
+		
+		return 0;	
 	}
 
 	return 0;
