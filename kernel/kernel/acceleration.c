@@ -58,7 +58,11 @@
 #include "workqueue_internal.h"
 #include "smpboot.h"
 
+#include <linux/kernel.h>
+
 #include <trace/events/sched.h>
+
+#include <linux/list.h>
 
 static struct kfifo acceleration_queue;
 static DEFINE_RWLOCK(acceleration_q_lock);
@@ -107,11 +111,11 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	for (i = 0 ; i < kfifo_len(&acceleration_queue)/sizeof(struct dev_acceleration) ; i ++)
 	{
 
-		printk("%d %d %d\n",test[i].x,test[i].y,test[i].z);
+		printk("%d %d %d\n",fifo_data[i].x,fifo_data[i].y,fifo_data[i].z);
 	}
 	printk("********\n");
 
-	kfree(test);
+	kfree(fifo_data);
 
 /**
  * kernel/kernel/acceleration.c
@@ -121,11 +125,6 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
  * and writes it to the kernel
  */
 
-
-
-#include <linux/kernel.h>
-#include <linux/slab.h>
-#include <linux/list.h>
 
 static struct dev_acceleration acc;
 DEFINE_RWLOCK(lock);
@@ -140,7 +139,7 @@ DEFINE_RWLOCK(el_rwlock);
  * @user_mask_ptr: user-space pointer to the new cpu mask
  */
 
-SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, acceleration)
+SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration *, acceleration)
 {
 	
 	struct dev_acceleration *tmp;
@@ -164,7 +163,7 @@ SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, acceleration
  */
 
 // int accevt_create(struct acc_motion __user *acceleration);
-SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
+SYSCALL_DEFINE1(accevt_create, struct acc_motion *, acceleration)
 {
 	/* find an available event id */
 	int eid;

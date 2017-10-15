@@ -19,11 +19,7 @@ struct dev_acceleration {
 	int z; /* acceleration along Z-axis */
 }; 
 
-<<<<<<< HEAD
 
-#endif
-
-=======
 struct acc_motion {
 
      unsigned int dlt_x; /* +/- around X-axis */
@@ -41,4 +37,4 @@ struct motion_event {
 	struct list_head list;
 };
 #endif
->>>>>>> cjh
+
