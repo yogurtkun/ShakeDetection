@@ -62,6 +62,7 @@
 
 #include <trace/events/sched.h>
 
+#include <linux/slab.h>
 #include <linux/list.h>
 
 static struct kfifo acceleration_queue;
@@ -116,7 +117,7 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	printk("********\n");
 
 	kfree(fifo_data);
-
+}
 /**
  * kernel/kernel/acceleration.c
  *
@@ -139,7 +140,7 @@ DEFINE_RWLOCK(el_rwlock);
  * @user_mask_ptr: user-space pointer to the new cpu mask
  */
 
-SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration *, acceleration)
+SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, acceleration)
 {
 	
 	struct dev_acceleration *tmp;
@@ -163,7 +164,7 @@ SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration *, acceleration)
  */
 
 // int accevt_create(struct acc_motion __user *acceleration);
-SYSCALL_DEFINE1(accevt_create, struct acc_motion *, acceleration)
+SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 {
 	/* find an available event id */
 	int eid;
