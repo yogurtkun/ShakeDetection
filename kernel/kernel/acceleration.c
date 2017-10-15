@@ -64,6 +64,7 @@
 
 #include <linux/slab.h>
 #include <linux/list.h>
+#include <linux/types.h>
 
 static struct kfifo acceleration_queue;
 static DEFINE_RWLOCK(acceleration_q_lock);
@@ -185,6 +186,8 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 	e = kmalloc(sizeof(struct motion_event), GFP_KERNEL);
 	e->eid = eid;
 	e->triggered = 0;
+	e->destroyed = 0;
+	atomic_set(&e->ref_count, 0);
 	e->baseline = kmalloc(sizeof(struct acc_motion), GFP_KERNEL);
 	INIT_LIST_HEAD(&e->list);
 	if (copy_from_user(e->baseline, acceleration, sizeof(struct acc_motion)))

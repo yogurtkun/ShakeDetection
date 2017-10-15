@@ -33,6 +33,8 @@ struct acc_motion {
 struct motion_event {
 	int eid;
 	int triggered; /* indicator for whether the event is signaled */
+	int destroyed; /* indicating whether the event is being destroyed */
+	atomic_t ref_count; /* how many processes is waiting for this event */
 	struct acc_motion *baseline;
 	struct list_head list;
 };
