@@ -1,8 +1,8 @@
 # TARGET=accelerationd
 # SOURCES=accelerationd.c
 
-TARGET=test_251
-SOURCES=test_251.c
+TARGET=test_253
+SOURCES=test_253.c
 
 
 # You probably don't need to change below
