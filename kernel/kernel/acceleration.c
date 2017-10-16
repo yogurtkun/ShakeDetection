@@ -112,36 +112,46 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	kfree(acc_data);
 	kfree(del_data);
 
-
 	struct dev_acceleration * fifo_data = kmalloc(sizeof(struct dev_acceleration)*(WINDOW + 1),GFP_KERNEL);
 
 	read_lock(&acceleration_q_lock);
-	kfifo_out_peek(&acceleration_queue,fifo_data,kfifo_len(&acceleration_queue));
+	int num_element = kfifo_len(&acceleration_queue);
+	kfifo_out_peek(&acceleration_queue,fifo_data,num_element);
 	read_unlock(&acceleration_q_lock);
-
-	/*This is test program*/
-	// int i = 0;
-
-	// for (i = 0 ; i < kfifo_len(&acceleration_queue)/sizeof(struct dev_acceleration) ; i ++)
-	// {
-
-	// 	printk("%d %d %d\n",fifo_data[i].x,fifo_data[i].y,fifo_data[i].z);
-	// }
-	// printk("********\n");
-
-	struct motion_event * e;
-	list_for_each_entry(e,&event_list,list){
-		if (e->eid == 0)
-			break;
+	int i;
+	unsigned int sum_dlt_x = 0;
+	unsigned int sum_dlt_y = 0;
+	unsigned int sum_dlt_z = 0;
+	unsigned int motion_cnt = 0;
+	for (i = 1; i < num_element; ++i) {
+		unsigned int dlt_x = abs(fifo_data[i].x - fifo_data[i-1].x);
+		unsigned int dlt_y = abs(fifo_data[i].y - fifo_data[i-1].y);
+		unsigned int dlt_z = abs(fifo_data[i].z - fifo_data[i-1].z);
+		sum_dlt_x += dlt_x;
+		sum_dlt_y += dlt_y;
+		sum_dlt_z += dlt_z;
+		if (dlt_x + dlt_y + dlt_z > NOISE)
+			++motion_cnt;
 	}
-
 	kfree(fifo_data);
 
-	printk("Hello from parent\n");
-
-	e->triggered = 1;
-	wake_up(&e->wait_queue);
+	struct motion_event * e;
+	read_lock(&event_list_lock);
+	list_for_each_entry(e,&event_list,list){
+		if ((sum_dlt_x > e->baseline->dlt_x) &&
+		(sum_dlt_y > e->baseline->dlt_y) &&
+		(sum_dlt_z > e->baseline->dlt_z) &&
+		(motion_cnt > e->baseline->frq)) {
+			write_lock(&e->rwlock);
+			e->triggered = 1;
+			write_unlock(&e->rwlock);
+			wake_up(&e->wait_queue);
+		}
+	}
+	read_unlock(&event_list_lock);
+	return 0;
 }
+
 /**
  * kernel/kernel/acceleration.c
  *
