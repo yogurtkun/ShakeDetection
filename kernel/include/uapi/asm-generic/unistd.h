@@ -668,10 +668,13 @@ __SYSCALL(__NR_set_acceleration, sys_set_acceleration)
 __SYSCALL(__NR_accevt_create, sys_accevt_create)
 
 #define __NR_accevt_wait 251
-__SYSCALL(__NR_accevt_wait,sys_accevt_wait)
+__SYSCALL(__NR_accevt_wait, sys_accevt_wait)
 
 #define __NR_accevt_signal 252
-__SYSCALL(__NR_accevt_signal,sys_accevt_signal)
+__SYSCALL(__NR_accevt_signal, sys_accevt_signal)
+
+#define __NR_accevt_destroy 253
+__SYSCALL(__NR_accevt_destroy, sys_accevt_destroy)
 
 
 

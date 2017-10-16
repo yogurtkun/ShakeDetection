@@ -870,4 +870,7 @@ asmlinkage long sys_set_acceleration(struct dev_acceleration __user * accelerati
 asmlinkage long sys_accevt_create(struct acc_motion __user * accleration);
 
 asmlinkage long sys_accevt_wait(int __user event_id);
+
+asmlinkage long sys_accevt_destroy(int event_id);
+
 #endif

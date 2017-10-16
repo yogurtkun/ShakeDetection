@@ -118,6 +118,7 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	int num_element = kfifo_len(&acceleration_queue);
 	kfifo_out_peek(&acceleration_queue,fifo_data,num_element);
 	read_unlock(&acceleration_q_lock);
+
 	int i;
 	unsigned int sum_dlt_x = 0;
 	unsigned int sum_dlt_y = 0;
@@ -254,6 +255,7 @@ struct motion_event * find_event(int event_id){
 
 SYSCALL_DEFINE1(accevt_wait, int , event_id){
 
+	/*verify if the event_id legal*/
 	read_lock(&event_list_lock);
 	struct motion_event * wait_event = find_event(event_id);
 	read_unlock(&event_list_lock);
@@ -263,6 +265,7 @@ SYSCALL_DEFINE1(accevt_wait, int , event_id){
 		return -EINVAL;
 	}
 
+	
 	DEFINE_WAIT(wait);
 
 	write_lock(&wait_event->rwlock);
@@ -318,10 +321,50 @@ SYSCALL_DEFINE1(accevt_wait, int , event_id){
 	else{
 
 		write_unlock(&wait_event->rwlock);
-		write_unlock(&event_list_lock);	
+		write_unlock(&event_list_lock);
 		
 		return 0;	
 	}
 
 	return 0;
 }
+
+SYSCALL_DEFINE1(accevt_destroy, int , event_id){
+
+	/*verify if the event_id legal*/
+	read_lock(&event_list_lock);
+	struct motion_event * to_destroy_event = find_event(event_id);
+	read_unlock(&event_list_lock);
+
+	if (to_destroy_event == NULL)
+	{
+		return -EINVAL;
+	}
+
+	write_lock(&event_list_lock);
+
+	write_lock(&to_destroy_event->rwlock);
+	to_destroy_event->destroyed = 1;
+	write_unlock(&to_destroy_event->rwlock);
+
+	int ref_times = atomic_read(&to_destroy_event->ref_count);
+
+	if (ref_times > 0)
+		wake_up(&to_destroy_event->wait_queue);
+
+	list_del(&to_destroy_event->list);
+
+	write_lock(&to_destroy_event->rwlock);
+	kfree(to_destroy_event->baseline);
+	kfree(to_destroy_event);
+	write_unlock(&to_destroy_event->rwlock);
+
+
+	write_unlock(&event_list_lock);
+
+	return 0;
+
+
+}
+
+
