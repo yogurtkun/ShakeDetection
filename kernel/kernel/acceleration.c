@@ -341,7 +341,7 @@ SYSCALL_DEFINE1(accevt_destroy, int , event_id){
 		return -EINVAL;
 	}
 
-	printk("step 1");
+	printk(KERN_INFO "step 1");
 
 	write_lock(&event_list_lock);
 
@@ -349,14 +349,14 @@ SYSCALL_DEFINE1(accevt_destroy, int , event_id){
 	to_destroy_event->destroyed = 1;
 	write_unlock(&to_destroy_event->rwlock);
 
-	printk("step 2");	
+	printk(KERN_INFO "step 2");	
 
 	int ref_times = atomic_read(&to_destroy_event->ref_count);
 
 	if (ref_times > 0)
 		wake_up(&to_destroy_event->wait_queue);
 
-	printk("step 3");
+	printk(KERN_INFO "step 3");
 
 	list_del(&to_destroy_event->list);
 
@@ -368,7 +368,7 @@ SYSCALL_DEFINE1(accevt_destroy, int , event_id){
 
 	write_unlock(&event_list_lock);
 
-	printk("step 4");
+	printk(KERN_INFO "step 4");
 
 	return 0;
 

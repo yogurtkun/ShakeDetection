@@ -5,6 +5,7 @@
 #include "stdio.h"
 #include <errno.h>
 #include <string.h>
+#include <unistd.h>
 
 /* Please use the same syscall number as indicated in the homework 3 instruction */
 
@@ -38,10 +39,10 @@ struct acc_motion {
 int main(int argc, char const *argv[])
 {
 	// int id = 0;
-	struct dev_acceleration sig;
-	sig.x = 0;
-	sig.y = 1;
-	sig.z = 2;
+	// struct dev_acceleration sig;
+	// sig.x = 0;
+	// sig.y = 1;
+	// sig.z = 2;
 
 	struct acc_motion data;
 	data.dlt_x = 0;
@@ -62,24 +63,24 @@ int main(int argc, char const *argv[])
 	// 	printf("%d\n",x );
 	// }
 
-	if (fork() != 0){
+	if (fork() == 0){
 		syscall(__NR_accevt_create,&data);
-		sleep(1);
+		
 		syscall(__NR_accevt_create,&data);
-		sleep(1);
+		
 		syscall(__NR_accevt_create,&data);
-		sleep(1);
+		
 	}
 	else{
-		sleep(20);
+		sleep(5);
 		if(syscall(__NR_accevt_destroy,0)<0)
-			printf("error");
+			printf("error 1");
 		if(syscall(__NR_accevt_destroy,1)<0)
-			printf("error");
+			printf("error 2");
 		if(syscall(__NR_accevt_destroy,2)<0)
-			printf("error");
+			printf("error 3");
 		if(syscall(__NR_accevt_destroy,3)<0)
-			printf("error");
+			printf("error 4");
 	}
 
 	return 0;
