@@ -175,7 +175,7 @@ DEFINE_RWLOCK(lock);
 SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, acceleration)
 {
 	
-	struct dev_acceleration *tmp;
+	struct dev_acceleration *tmp = kmalloc(sizeof(struct dev_acceleration), GFP_KERNEL);
 
 	if (current_uid()!=0) {
 		return -EACCES;
@@ -187,6 +187,8 @@ SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, acceleration
 	write_lock(&lock);
 	memcpy(&acc, tmp, sizeof(struct dev_acceleration));
 	write_unlock(&lock);
+
+	kfree(tmp);
 
 	return 0;
 }
@@ -358,13 +360,7 @@ SYSCALL_DEFINE1(accevt_destroy, int , event_id){
 
 	printk(KERN_INFO "step 3");
 
-	list_del(&to_destroy_event->list);
-
-	write_lock(&to_destroy_event->rwlock);
-	kfree(to_destroy_event->baseline);
-	kfree(to_destroy_event);
-	write_unlock(&to_destroy_event->rwlock);
-
+	
 
 	write_unlock(&event_list_lock);
 
