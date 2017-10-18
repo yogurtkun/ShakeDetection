@@ -22,7 +22,7 @@ int main(int argc, char const *argv[])
 	data.z = 2;
 	printf("Hello world from user\n");
 	int i = 0;
-	for ( i = 0; i < 30; ++i)
+	for (i = 0; i < 30; ++i)
 	{
 		data.x = i*3+0;
 		data.y = i*3+1;

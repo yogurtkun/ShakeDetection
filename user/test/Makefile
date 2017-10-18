@@ -1,9 +1,5 @@
-TARGET=accelerationd
-SOURCES=accelerationd.c
-
-#TARGET=test_253
-#SOURCES=test_253.c
-
+TARGET=test
+SOURCES=test.c
 
 # You probably don't need to change below
 

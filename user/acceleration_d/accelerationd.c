@@ -26,7 +26,7 @@
 #define TIME_INTERVAL  200
 
 static int effective_linaccel_sensor = -1;
-
+int DAEMON_TYPE = 1; /* indicating the behavior of daemon */
 
 /* helper functions which you should use */
 static int open_sensors(struct sensors_module_t **hw_module,
@@ -68,8 +68,6 @@ void daemon_mode(void)
 	dup2(flog,1);
 	close(0);
 	close(2);
-
-	return 0;
 }
 
 int main(int argc, char **argv)
@@ -80,6 +78,8 @@ int main(int argc, char **argv)
 
 	if (argv[1] && strcmp(argv[1], "-e") == 0)
 		goto emulation;
+	if (argv[1] && strcmp(argv[1], "-o") == 0)
+		DAEMON_TYPE = 0;
 
 	/*
 	 * TODO: Implement your code to make this process a daemon in
@@ -98,12 +98,15 @@ int main(int argc, char **argv)
 	printf("turn me into a daemon!\n");
 	while (1) {
 emulation:
-		poll_sensor_data(sensors_device);
+		errsv = poll_sensor_data(sensors_device);
+		if (errsv != 0) 
+			break;
 		/* TODO: Define time interval and call usleep */
 		usleep(TIME_INTERVAL);
 	}
 
-	return EXIT_SUCCESS;
+	// return EXIT_SUCCESS;
+	return errsv;
 }
 
 
@@ -119,9 +122,12 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 		 * TODO: You have the acceleration here - 
 		 * scale it and send it to your kernel
 		 */
+		if (DAEMON_TYPE == 1) {
+			syscall(__NR_accevt_signal, &cur_acceleration);
+		} else { /* original */
+			syscall(__NR_set_acceleration, &cur_acceleration);
+		}
 	} else {
-
-
 		sensors_event_t buffer[128];
 		ssize_t buf_size = sizeof(buffer)/sizeof(buffer[0]);
 		ssize_t count = sensors_device->poll(sensors_device,
@@ -131,7 +137,20 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 		 * TODO: You have the acceleration here - scale it and
 		 * send it to kernel
 		 */
-		
+		if (count == 0) {
+			printf("sensors device poll failed!\n");
+			exit(EXIT_FAILURE);
+		}
+		cur_acceleration = malloc(sizeof(struct dev_acceleration));
+		cur_acceleration->x = (int)(100*buffer[count-1].acceleration.x);
+		cur_acceleration->y = (int)(100*buffer[count-1].acceleration.y);
+		cur_acceleration->z = (int)(100*buffer[count-1].acceleration.z);
+		if (DAEMON_TYPE == 1) {
+			syscall(__NR_accevt_signal, &cur_acceleration);
+		} else { /* original */
+			syscall(__NR_set_acceleration, &cur_acceleration);
+		}
+		free(cur_acceleration);
 	}
 	return err;
 }
