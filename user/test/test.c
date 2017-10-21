@@ -26,8 +26,7 @@ int detect(int eid, int id) {
 	}
 	
 	fprintf(stdout,"%d detected a shake!\n",id );
-
-	return ret;
+	exit(EXIT_SUCCESS);
 }
 
 void init_acc_motion(struct acc_motion * acc,int x,int y, int z,int frq){
@@ -44,14 +43,15 @@ int main(int argc, char const *argv[])
 {
 	/* TODO: decide the value */
 	int t = 10;
+	int frq = 10;
 	struct acc_motion xshake;
-	init_acc_motion(&xshake,t,0,0,10);
+	init_acc_motion(&xshake,t,0,0,frq);
 
 	struct acc_motion yshake;
-	init_acc_motion(&yshake,0,t,0,10);
+	init_acc_motion(&yshake,0,t,0,frq);
 
 	struct acc_motion shake;
-	init_acc_motion(&shake,t,t,0,10);
+	init_acc_motion(&shake,t,t,0,frq);
 
 	int xeid, yeid, eid;
 	xeid = syscall(__NR_accevt_create, &xshake);
