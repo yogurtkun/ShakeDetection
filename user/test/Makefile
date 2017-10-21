@@ -1,4 +1,4 @@
-TARGET=test
+TARGET=emu_test
 SOURCES=test.c
 
 # You probably don't need to change below

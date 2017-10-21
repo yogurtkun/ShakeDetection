@@ -74,14 +74,11 @@ static DEFINE_RWLOCK(event_list_lock);
 
 SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 
-	printk("Hello from parent-2\n");
 	/*Check the privilegios*/
 	if (current_cred()->uid != 0)
 	{
 		return -EACCES;
 	}
-
-	printk("Hello from parent-1\n");
 
 	if (!kfifo_initialized(&acceleration_queue)){
 		if (kfifo_alloc(&acceleration_queue,sizeof(struct dev_acceleration)* (WINDOW+1),GFP_KERNEL) ){
@@ -89,7 +86,6 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 		}
 	}
 
-	printk("Hello from parent0\n");
 
 	struct dev_acceleration * acc_data = kmalloc(sizeof(struct dev_acceleration),GFP_KERNEL);
 	struct dev_acceleration * del_data = kmalloc(sizeof(struct dev_acceleration),GFP_KERNEL);
@@ -107,7 +103,6 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 
 	write_unlock(&acceleration_q_lock);
 
-	printk("Hello from parent1\n");
 
 	kfree(acc_data);
 	kfree(del_data);
@@ -275,7 +270,6 @@ SYSCALL_DEFINE1(accevt_wait, int , event_id){
 	atomic_inc(&wait_event->ref_count);
 	write_unlock(&wait_event->rwlock);
 
-	printk("Hello from child to start\n");
 
 	while(1){
 
@@ -289,8 +283,6 @@ SYSCALL_DEFINE1(accevt_wait, int , event_id){
 		prepare_to_wait(&wait_event->wait_queue,&wait,TASK_INTERRUPTIBLE);
 		schedule();
 	}
-
-	printk("Hello from child end\n");
 
 	write_lock(&event_list_lock);
 	write_lock(&wait_event->rwlock);

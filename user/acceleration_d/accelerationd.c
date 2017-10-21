@@ -105,6 +105,7 @@ emulation:
 		usleep(TIME_INTERVAL);
 	}
 
+	fprintf(stdout,"Daemon process exit!\n");
 	// return EXIT_SUCCESS;
 	return errsv;
 }
@@ -118,6 +119,7 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 	if (effective_linaccel_sensor < 0) {
 		/* emulation */
 		cur_acceleration = poll_sensor_data_emulator();
+		fprintf(stdout, "Acceleration data: %d %d %d\n",cur_acceleration->x,cur_acceleration->y,cur_acceleration->z );
 		/*
 		 * TODO: You have the acceleration here - 
 		 * scale it and send it to your kernel
@@ -145,6 +147,8 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 		cur_acceleration->x = (int)(100*buffer[count-1].acceleration.x);
 		cur_acceleration->y = (int)(100*buffer[count-1].acceleration.y);
 		cur_acceleration->z = (int)(100*buffer[count-1].acceleration.z);
+
+		fprintf(stdout, "Acceleration data: %d %d %d\n",cur_acceleration->x,cur_acceleration->y,cur_acceleration->z );
 		if (DAEMON_TYPE == 1) {
 			syscall(__NR_accevt_signal, &cur_acceleration);
 		} else { /* original */
