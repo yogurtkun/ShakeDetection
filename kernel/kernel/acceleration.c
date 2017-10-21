@@ -355,8 +355,10 @@ SYSCALL_DEFINE1(accevt_destroy, int , event_id){
 
 	int ref_times = atomic_read(&to_destroy_event->ref_count);
 
-	if (ref_times > 0)
+	if (ref_times > 0) {
+		to_destroy_event->triggered = 1;
 		wake_up(&to_destroy_event->wait_queue);
+	}
 
 	printk(KERN_INFO "step 3");
 
