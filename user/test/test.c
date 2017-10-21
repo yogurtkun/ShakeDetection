@@ -20,7 +20,7 @@ int detect(int eid, int id) {
 		return 0;
 	/* children */
 	int ret;
-	if (ret = syscall(__NR_accevt_wait, &eid)) {
+	if (ret = syscall(__NR_accevt_wait, eid)) {
 		
 		exit(EXIT_FAILURE);
 	}
@@ -62,10 +62,10 @@ int main(int argc, char const *argv[])
 	detect(yeid,1);
 	detect(eid,2);
 	sleep(61);
-		/* close all opened events after a peiod of time */
-	syscall(__NR_accevt_destroy,&xeid);
-	syscall(__NR_accevt_destroy,&yeid);
-	syscall(__NR_accevt_destroy,&eid);
+	/* close all opened events after a peiod of time */
+	syscall(__NR_accevt_destroy,xeid);
+	syscall(__NR_accevt_destroy,yeid);
+	syscall(__NR_accevt_destroy,eid);
 	while (wait(NULL)) {
 		if (errno == ECHILD)
 			break;
