@@ -134,7 +134,8 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 		sum_dlt_z += dlt_z;
 		if (dlt_x + dlt_y + dlt_z > NOISE)
 			++motion_cnt;
-		printk("%d %d %d\n",fifo_data[i].x,fifo_data[i].y,fifo_data[i].z);
+		// printk("%d %d %d\n",fifo_data[i].x,fifo_data[i].y,fifo_data[i].z);
+		printk("%d %d %d\n",dlt_x, dlt_y, dlt_z);
 	}
 	printk("*******\n");
 	kfree(fifo_data);
@@ -142,10 +143,16 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	struct motion_event * e;
 	read_lock(&event_list_lock);
 	list_for_each_entry(e,&event_list,list){
-		if ((sum_dlt_x > e->baseline->dlt_x) &&
-		(sum_dlt_y > e->baseline->dlt_y) &&
-		(sum_dlt_z > e->baseline->dlt_z) &&
-		(motion_cnt > e->baseline->frq)) {
+		printk("%d(%d), %d(%d), %d(%d), %d(%d)\n", 
+			sum_dlt_x, e->baseline->dlt_x,
+			sum_dlt_y, e->baseline->dlt_y,
+			sum_dlt_z, e->baseline->dlt_z,
+			motion_cnt, e->baseline->frq);
+
+		if ((sum_dlt_x >= e->baseline->dlt_x) &&
+		(sum_dlt_y >= e->baseline->dlt_y) &&
+		(sum_dlt_z >= e->baseline->dlt_z) &&
+		(motion_cnt >= e->baseline->frq)) {
 			write_lock(&e->rwlock);
 			e->triggered = 1;
 			write_unlock(&e->rwlock);
