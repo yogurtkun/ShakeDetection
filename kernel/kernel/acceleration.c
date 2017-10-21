@@ -350,26 +350,60 @@ SYSCALL_DEFINE1(accevt_destroy, int , event_id){
 		return -EINVAL;
 	}
 
-	printk(KERN_INFO "step 1");
+	// printk(KERN_INFO "step 1");
 
 	write_lock(&event_list_lock);
 
+
+	int ref_times = atomic_read(&to_destroy_event->ref_count);
+
 	write_lock(&to_destroy_event->rwlock);
-	to_destroy_event->destroyed = 1;
-	write_unlock(&to_destroy_event->rwlock);
+	if (ref_times > 0) {
 
-	printk(KERN_INFO "step 2");	
+		to_destroy_event->destroyed = 1;
+		to_destroy_event->triggered = 1;
+		wake_up(&to_destroy_event->wait_queue);
+		write_unlock(&to_destroy_event->rwlock);
 
-	to_destroy_event->triggered = 1;
-	wake_up(&to_destroy_event->wait_queue);
 
-	printk(KERN_INFO "step 3");
+	}
 
+	else if (ref_times == 0){
+		list_del(&to_destroy_event->list);
+		kfree(to_destroy_event->baseline);
+		kfree(to_destroy_event);
+		write_unlock(&to_destroy_event->rwlock);
+
+
+	}
+
+	// write_lock(&to_destroy_event->rwlock);
+	// to_destroy_event->destroyed = 1;
+	// write_unlock(&to_destroy_event->rwlock);
+
+
+	// printk(KERN_INFO "step 2");	
+
+	// to_destroy_event->triggered = 1;
+	// wake_up(&to_destroy_event->wait_queue);
+
+	// printk(KERN_INFO "step 3");
+
+
+
+	// int ref_times = atomic_read(&to_destroy_event->ref_count);
+	// if (ref_times == 0) {
+	// list_del(&wait_event->list);
 	
+	// write_lock(&to_destroy_event->rwlock);
+	// kfree(wait_event->baseline);
+	// kfree(wait_event);
+	// write_unlock(&to_destroy_event->rwlock);
+	// }
 
 	write_unlock(&event_list_lock);
 
-	printk(KERN_INFO "step 4");
+	// printk(KERN_INFO "step 4");
 
 	return 0;
 
