@@ -23,7 +23,6 @@
 
 #include "accelerationd.h"
 
-#define TIME_INTERVAL  200
 
 static int effective_linaccel_sensor = -1;
 int DAEMON_TYPE = 1; /* indicating the behavior of daemon */

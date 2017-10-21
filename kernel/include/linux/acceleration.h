@@ -3,6 +3,7 @@
 
 #define NOISE 10
 #define WINDOW 20
+#define WINDOW_INIT 32
 
 #define __NR_set_acceleration 249
 #define __NR_accevt_create 250

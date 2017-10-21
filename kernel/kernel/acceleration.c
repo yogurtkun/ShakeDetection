@@ -81,10 +81,15 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	}
 
 	if (!kfifo_initialized(&acceleration_queue)){
-		if (kfifo_alloc(&acceleration_queue,sizeof(struct dev_acceleration)* (WINDOW+1),GFP_KERNEL) ){
+		if (kfifo_alloc(&acceleration_queue,sizeof(struct dev_acceleration)* (WINDOW_INIT),GFP_KERNEL) ){
 			return -ENOMEM;
 		}
 	}
+
+	printk("$$$$$$\n");
+	printk("%d %d %d\n",acceleration->x,acceleration->y,acceleration->z);
+	printk("%d\n",kfifo_len(&acceleration_queue)/sizeof(struct dev_acceleration));
+	printk("$$$$$$\n");
 
 
 	struct dev_acceleration * acc_data = kmalloc(sizeof(struct dev_acceleration),GFP_KERNEL);
@@ -111,6 +116,7 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 
 	read_lock(&acceleration_q_lock);
 	int num_element = kfifo_len(&acceleration_queue);
+	int queue_len = num_element/sizeof(struct dev_acceleration);
 	kfifo_out_peek(&acceleration_queue,fifo_data,num_element);
 	read_unlock(&acceleration_q_lock);
 
@@ -119,7 +125,7 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	unsigned int sum_dlt_y = 0;
 	unsigned int sum_dlt_z = 0;
 	unsigned int motion_cnt = 0;
-	for (i = 1; i < num_element; ++i) {
+	for (i = 1; i < queue_len; ++i) {
 		unsigned int dlt_x = abs(fifo_data[i].x - fifo_data[i-1].x);
 		unsigned int dlt_y = abs(fifo_data[i].y - fifo_data[i-1].y);
 		unsigned int dlt_z = abs(fifo_data[i].z - fifo_data[i-1].z);
@@ -128,7 +134,9 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 		sum_dlt_z += dlt_z;
 		if (dlt_x + dlt_y + dlt_z > NOISE)
 			++motion_cnt;
+		printk("%d %d %d\n",fifo_data[i].x,fifo_data[i].y,fifo_data[i].z);
 	}
+	printk("*******\n");
 	kfree(fifo_data);
 
 	struct motion_event * e;

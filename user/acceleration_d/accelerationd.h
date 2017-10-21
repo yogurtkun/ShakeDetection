@@ -9,7 +9,7 @@
 #define __NR_accevt_signal 252
 #define __NR_accevt_destroy 253
 
-#define TIME_INTERVAL  200
+#define TIME_INTERVAL  20
 
 
 struct dev_acceleration {
