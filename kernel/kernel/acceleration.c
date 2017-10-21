@@ -84,6 +84,7 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	unsigned int sum_dlt_y = 0;
 	unsigned int sum_dlt_z = 0;
 	unsigned int motion_cnt = 0;
+	int ret;
 	struct motion_event * e;
 	/*Check the privilegios*/
 	if (current_cred()->uid != 0)
@@ -112,7 +113,7 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	write_lock(&acceleration_q_lock);
 	if (kfifo_len(&acceleration_queue) == (WINDOW+1)*sizeof(struct dev_acceleration))
 	{
-		kfifo_out(&acceleration_queue,del_data,sizeof(struct dev_acceleration));
+		ret = kfifo_out(&acceleration_queue,del_data,sizeof(struct dev_acceleration));
 	}
 
 	kfifo_in(&acceleration_queue,acc_data,sizeof(struct dev_acceleration));
@@ -128,7 +129,7 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	read_lock(&acceleration_q_lock);
 	num_element = kfifo_len(&acceleration_queue);
 	queue_len = num_element/sizeof(struct dev_acceleration);
-	kfifo_out_peek(&acceleration_queue,fifo_data,num_element);
+	ret = kfifo_out_peek(&acceleration_queue,fifo_data,num_element);
 	read_unlock(&acceleration_q_lock);
 
 	
@@ -272,7 +273,7 @@ struct motion_event * find_event(int event_id){
  */
 
 SYSCALL_DEFINE1(accevt_wait, int , event_id){
-
+	DEFINE_WAIT(wait);
 	struct motion_event * wait_event;
 	int ref_times;
 	/*verify if the event_id legal*/
@@ -287,7 +288,6 @@ SYSCALL_DEFINE1(accevt_wait, int , event_id){
 	}
 
 	write_lock(&wait_event->rwlock);
-	DEFINE_WAIT(wait);
 
 	add_wait_queue(&wait_event->wait_queue,&wait);
 	atomic_inc(&wait_event->ref_count);
