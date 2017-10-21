@@ -74,6 +74,17 @@ static DEFINE_RWLOCK(event_list_lock);
 
 SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 
+	struct dev_acceleration * acc_data = NULL;
+	struct dev_acceleration * del_data = NULL;
+	struct dev_acceleration * fifo_data = NULL;
+	int num_element;
+	int queue_len;
+	int i;
+	unsigned int sum_dlt_x = 0;
+	unsigned int sum_dlt_y = 0;
+	unsigned int sum_dlt_z = 0;
+	unsigned int motion_cnt = 0;
+	struct motion_event * e;
 	/*Check the privilegios*/
 	if (current_cred()->uid != 0)
 	{
@@ -88,12 +99,12 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 
 	printk("$$$$$$\n");
 	printk("%d %d %d\n",acceleration->x,acceleration->y,acceleration->z);
-	printk("%d\n",kfifo_len(&acceleration_queue)/sizeof(struct dev_acceleration));
+	// printk("%d\n",kfifo_len(&acceleration_queue)/sizeof(struct dev_acceleration));
 	printk("$$$$$$\n");
 
 
-	struct dev_acceleration * acc_data = kmalloc(sizeof(struct dev_acceleration),GFP_KERNEL);
-	struct dev_acceleration * del_data = kmalloc(sizeof(struct dev_acceleration),GFP_KERNEL);
+	acc_data = kmalloc(sizeof(struct dev_acceleration),GFP_KERNEL);
+	del_data = kmalloc(sizeof(struct dev_acceleration),GFP_KERNEL);
 
 	if(copy_from_user(acc_data,acceleration,sizeof(struct dev_acceleration)))
 		return -EFAULT;
@@ -112,19 +123,15 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	kfree(acc_data);
 	kfree(del_data);
 
-	struct dev_acceleration * fifo_data = kmalloc(sizeof(struct dev_acceleration)*(WINDOW + 1),GFP_KERNEL);
+	fifo_data = kmalloc(sizeof(struct dev_acceleration)*(WINDOW + 1),GFP_KERNEL);
 
 	read_lock(&acceleration_q_lock);
-	int num_element = kfifo_len(&acceleration_queue);
-	int queue_len = num_element/sizeof(struct dev_acceleration);
+	num_element = kfifo_len(&acceleration_queue);
+	queue_len = num_element/sizeof(struct dev_acceleration);
 	kfifo_out_peek(&acceleration_queue,fifo_data,num_element);
 	read_unlock(&acceleration_q_lock);
 
-	int i;
-	unsigned int sum_dlt_x = 0;
-	unsigned int sum_dlt_y = 0;
-	unsigned int sum_dlt_z = 0;
-	unsigned int motion_cnt = 0;
+	
 	for (i = 1; i < queue_len; ++i) {
 		unsigned int dlt_x = abs(fifo_data[i].x - fifo_data[i-1].x);
 		unsigned int dlt_y = abs(fifo_data[i].y - fifo_data[i-1].y);
@@ -140,7 +147,6 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	printk("*******\n");
 	kfree(fifo_data);
 
-	struct motion_event * e;
 	read_lock(&event_list_lock);
 	list_for_each_entry(e,&event_list,list){
 		printk("%d(%d), %d(%d), %d(%d), %d(%d)\n", 
@@ -267,9 +273,11 @@ struct motion_event * find_event(int event_id){
 
 SYSCALL_DEFINE1(accevt_wait, int , event_id){
 
+	struct motion_event * wait_event;
+	int ref_times;
 	/*verify if the event_id legal*/
 	read_lock(&event_list_lock);
-	struct motion_event * wait_event = find_event(event_id);
+	wait_event = find_event(event_id);
 	
 
 	if (wait_event == NULL)
@@ -305,7 +313,7 @@ SYSCALL_DEFINE1(accevt_wait, int , event_id){
 	finish_wait(&wait_event->wait_queue,&wait);
 
 	atomic_dec(&wait_event->ref_count);
-	int ref_times = atomic_read(&wait_event->ref_count);
+	ref_times = atomic_read(&wait_event->ref_count);
 
 
 	if (wait_event->destroyed && ref_times == 0){
@@ -341,9 +349,11 @@ SYSCALL_DEFINE1(accevt_wait, int , event_id){
 
 SYSCALL_DEFINE1(accevt_destroy, int , event_id){
 
+	struct motion_event * to_destroy_event;
+	int ref_times;
 	/*verify if the event_id legal*/
 	read_lock(&event_list_lock);
-	struct motion_event * to_destroy_event = find_event(event_id);
+	to_destroy_event = find_event(event_id);
 	read_unlock(&event_list_lock);
 
 	if (to_destroy_event == NULL)
@@ -356,7 +366,7 @@ SYSCALL_DEFINE1(accevt_destroy, int , event_id){
 	write_lock(&event_list_lock);
 
 
-	int ref_times = atomic_read(&to_destroy_event->ref_count);
+	ref_times = atomic_read(&to_destroy_event->ref_count);
 
 	write_lock(&to_destroy_event->rwlock);
 	if (ref_times > 0) {
