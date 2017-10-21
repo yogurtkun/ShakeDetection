@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-
+#include <sys/wait.h>
 #include "test.h"
 
 int detect(int eid, int id) {
@@ -43,14 +43,15 @@ void init_acc_motion(struct acc_motion * acc,int x,int y, int z,int frq){
 int main(int argc, char const *argv[])
 {
 	/* TODO: decide the value */
+	int t = 10;
 	struct acc_motion xshake;
-	init_acc_motion(&xshake,200,0,0,10);
+	init_acc_motion(&xshake,t,0,0,10);
 
 	struct acc_motion yshake;
-	init_acc_motion(&yshake,0,200,0,10);
+	init_acc_motion(&yshake,0,t,0,10);
 
 	struct acc_motion shake;
-	init_acc_motion(&shake,200,200,0,10);
+	init_acc_motion(&shake,t,t,0,10);
 
 	int xeid, yeid, eid;
 	xeid = syscall(__NR_accevt_create, &xshake);
@@ -65,7 +66,10 @@ int main(int argc, char const *argv[])
 	syscall(__NR_accevt_destroy,&xeid);
 	syscall(__NR_accevt_destroy,&yeid);
 	syscall(__NR_accevt_destroy,&eid);
-	wait();
+	while (wait(NULL)) {
+		if (errno == ECHILD)
+			break;
+	}
 
 
 	return 0;
