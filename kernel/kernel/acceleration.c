@@ -270,20 +270,21 @@ SYSCALL_DEFINE1(accevt_wait, int , event_id){
 	/*verify if the event_id legal*/
 	read_lock(&event_list_lock);
 	struct motion_event * wait_event = find_event(event_id);
-	read_unlock(&event_list_lock);
+	
 
 	if (wait_event == NULL)
 	{
+		read_unlock(&event_list_lock);
 		return -EINVAL;
 	}
 
-	
+	write_lock(&wait_event->rwlock);
 	DEFINE_WAIT(wait);
 
-	write_lock(&wait_event->rwlock);
 	add_wait_queue(&wait_event->wait_queue,&wait);
 	atomic_inc(&wait_event->ref_count);
 	write_unlock(&wait_event->rwlock);
+	read_unlock(&event_list_lock);
 
 
 	while(1){
