@@ -124,9 +124,9 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 		 * scale it and send it to your kernel
 		 */
 		if (DAEMON_TYPE == 1) {
-			syscall(__NR_accevt_signal, &cur_acceleration);
+			syscall(__NR_accevt_signal, cur_acceleration);
 		} else { /* original */
-			syscall(__NR_set_acceleration, &cur_acceleration);
+			syscall(__NR_set_acceleration, cur_acceleration);
 		}
 	} else {
 		sensors_event_t buffer[128];
@@ -149,9 +149,9 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 
 		fprintf(stdout, "Acceleration data: %d %d %d\n",cur_acceleration->x,cur_acceleration->y,cur_acceleration->z );
 		if (DAEMON_TYPE == 1) {
-			syscall(__NR_accevt_signal, &cur_acceleration);
+			syscall(__NR_accevt_signal, cur_acceleration);
 		} else { /* original */
-			syscall(__NR_set_acceleration, &cur_acceleration);
+			syscall(__NR_set_acceleration, cur_acceleration);
 		}
 		free(cur_acceleration);
 	}
