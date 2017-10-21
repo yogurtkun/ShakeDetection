@@ -78,7 +78,9 @@ struct sigaltstack;
 #include <linux/quota.h>
 #include <linux/key.h>
 #include <trace/syscall.h>
+#include <linux/acceleration.h>
 
+#include <linux/acceleration.h>
 /*
  * __MAP - apply a macro to syscall arguments
  * __MAP(n, m, t1, a1, t2, a2, ..., tn, an) will expand to
@@ -856,4 +858,16 @@ asmlinkage long sys_kcmp(pid_t pid1, pid_t pid2, int type,
 asmlinkage long sys_finit_module(int fd, const char __user *uargs, int flags);
 asmlinkage long sys_seccomp(unsigned int op, unsigned int flags,
 			    const char __user *uargs);
+
+
+asmlinkage long sys_accevt_signal(struct dev_acceleration __user * acceleration);
+
+asmlinkage long sys_set_acceleration(struct dev_acceleration __user * acceleration);
+
+asmlinkage long sys_accevt_create(struct acc_motion __user * accleration);
+
+asmlinkage long sys_accevt_wait(int __user event_id);
+
+asmlinkage long sys_accevt_destroy(int event_id);
+
 #endif
