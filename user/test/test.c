@@ -57,21 +57,16 @@ int main(int argc, char const *argv[])
 	yeid = syscall(__NR_accevt_create, &yshake);
 	eid  = syscall(__NR_accevt_create, &shake);
 
-	pid_t pid = fork();
-
-	if(pid != 0){
-		sleep(61);
+	detect(xeid,0);
+	detect(yeid,1);
+	detect(eid,2);
+	sleep(61);
 		/* close all opened events after a peiod of time */
-		syscall(__NR_accevt_destroy,&xeid);
-		syscall(__NR_accevt_destroy,&yeid);
-		syscall(__NR_accevt_destroy,&eid);
-		wait();
-	}else{
-		/* TODO: discuss the meaning of process identifier */
-		detect(xeid,0);
-		detect(yeid,1);
-		detect(eid,2);
-	}
+	syscall(__NR_accevt_destroy,&xeid);
+	syscall(__NR_accevt_destroy,&yeid);
+	syscall(__NR_accevt_destroy,&eid);
+	wait();
+
 
 	return 0;
 }
