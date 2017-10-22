@@ -34,6 +34,8 @@ static void enumerate_sensors(const struct sensors_module_t *sensors);
 static struct dev_acceleration *poll_sensor_data_emulator(void);
 static int poll_sensor_data(struct sensors_poll_device_t *sensors_device);
 
+/* struct dev_acceleration gc; */
+
 void daemon_mode(void)
 {
 	pid_t pid,sid;
@@ -143,11 +145,11 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 			exit(EXIT_FAILURE);
 		}
 		cur_acceleration = malloc(sizeof(struct dev_acceleration));
-		cur_acceleration->x = (int)(100*buffer[count-1].acceleration.x);
-		cur_acceleration->y = (int)(100*buffer[count-1].acceleration.y);
-		cur_acceleration->z = (int)(100*buffer[count-1].acceleration.z);
+		cur_acceleration->x = (int)(100*buffer[0].acceleration.x);
+		cur_acceleration->y = (int)(100*buffer[0].acceleration.y);
+		cur_acceleration->z = (int)(100*buffer[0].acceleration.z);
 
-		fprintf(stdout, "Acceleration data: %d %d %d\n",cur_acceleration->x,cur_acceleration->y,cur_acceleration->z );
+		/* fprintf(stdout, "Acceleration data: %d %d %d\n",cur_acceleration->x,cur_acceleration->y,cur_acceleration->z ); */
 		if (DAEMON_TYPE == 1) {
 			syscall(__NR_accevt_signal, cur_acceleration);
 		} else { /* original */

@@ -49,16 +49,17 @@ void init_acc_motion(struct acc_motion * acc,int x,int y, int z,int frq){
 int main(int argc, char const *argv[])
 {
 	/* TODO: decide the value */
-	int t = 2000;
+	int xt = 2000;
+	int yt = 2000;
 	int frq = 15;
 	struct acc_motion xshake;
-	init_acc_motion(&xshake,t,0,0,frq);
+	init_acc_motion(&xshake,xt,0,0,frq);
 
 	struct acc_motion yshake;
-	init_acc_motion(&yshake,0,t/3,0,frq);
+	init_acc_motion(&yshake,0,yt,0,frq);
 
 	struct acc_motion shake;
-	init_acc_motion(&shake,t,t/3,0,frq);
+	init_acc_motion(&shake,xt,yt,0,frq);
 
 	int xeid, yeid, eid;
 	xeid = syscall(__NR_accevt_create, &xshake);
