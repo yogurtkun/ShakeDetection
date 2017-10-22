@@ -19,13 +19,13 @@
 #include <sys/syscall.h>
 
 #include <hardware/hardware.h>
-#include <hardware/sensors.h> /* <-- This is a good place to look! */
+#include <hardware/sensors.h>	/* <-- This is a good place to look! */
 
 #include "accelerationd.h"
 
 
 static int effective_linaccel_sensor = -1;
-int DAEMON_TYPE = 1; /* indicating the behavior of daemon */
+int DAEMON_TYPE = 1;		/* indicating the behavior of daemon */
 
 /* helper functions which you should use */
 static int open_sensors(struct sensors_module_t **hw_module,
@@ -36,35 +36,36 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device);
 
 void daemon_mode(void)
 {
-	pid_t pid,sid;
+	pid_t pid, sid;
 
 	pid = fork();
 
-	if (pid < 0){
+	if (pid < 0) {
 		printf("Fork failed\n");
 		exit(EXIT_FAILURE);
 	}
 
-	if (pid > 0){
+	if (pid > 0) {
 		exit(EXIT_SUCCESS);
 	}
 
 	umask(0);
 
-	int flog = open("./acceleration_log.txt",O_WRONLY | O_APPEND | O_CREAT);
+	int flog =
+	    open("./acceleration_log.txt", O_WRONLY | O_APPEND | O_CREAT);
 
 	sid = setsid();
-	if (sid < 0){
+	if (sid < 0) {
 		printf("Set sid failed\n");
 		exit(EXIT_FAILURE);
 	}
 
-	if (chdir("/") < 0){
+	if (chdir("/") < 0) {
 		printf("Change directory failed\n");
 		exit(EXIT_FAILURE);
 	}
 
-	dup2(flog,1);
+	dup2(flog, 1);
 	close(0);
 	close(2);
 }
@@ -73,7 +74,7 @@ int main(int argc, char **argv)
 {
 	struct sensors_module_t *sensors_module = NULL;
 	struct sensors_poll_device_t *sensors_device = NULL;
-	int errsv = 0; /* Error that we pull up from system call*/
+	int errsv = 0;		/* Error that we pull up from system call */
 
 	if (argv[1] && strcmp(argv[1], "-e") == 0)
 		goto emulation;
@@ -87,8 +88,7 @@ int main(int argc, char **argv)
 	daemon_mode();
 
 	printf("Opening sensors...\n");
-	if (open_sensors(&sensors_module,
-			 &sensors_device) < 0) {
+	if (open_sensors(&sensors_module, &sensors_device) < 0) {
 		printf("open_sensors failed\n");
 		return EXIT_FAILURE;
 	}
@@ -96,16 +96,16 @@ int main(int argc, char **argv)
 
 	printf("turn me into a daemon!\n");
 	while (1) {
-emulation:
+	      emulation:
 		errsv = poll_sensor_data(sensors_device);
-		if (errsv != 0) 
+		if (errsv != 0)
 			break;
 		/* TODO: Define time interval and call usleep */
 		usleep(TIME_INTERVAL);
 	}
 
-	fprintf(stdout,"Daemon process exit!\n");
-	// return EXIT_SUCCESS;
+	fprintf(stdout, "Daemon process exit!\n");
+	/*return EXIT_SUCCESS;*/
 	return errsv;
 }
 
@@ -113,27 +113,29 @@ emulation:
 static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 {
 	struct dev_acceleration *cur_acceleration;
-	int err = 0; /* Return value of this function*/
+	int err = 0;		/* Return value of this function */
 
 	if (effective_linaccel_sensor < 0) {
 		/* emulation */
 		cur_acceleration = poll_sensor_data_emulator();
-		fprintf(stdout, "Acceleration data: %d %d %d\n",cur_acceleration->x,cur_acceleration->y,cur_acceleration->z );
+		fprintf(stdout, "Acceleration data: %d %d %d\n",
+			cur_acceleration->x, cur_acceleration->y,
+			cur_acceleration->z);
 		/*
-		 * TODO: You have the acceleration here - 
+		 * TODO: You have the acceleration here -
 		 * scale it and send it to your kernel
 		 */
 		if (DAEMON_TYPE == 1) {
 			syscall(__NR_accevt_signal, cur_acceleration);
-		} else { /* original */
+		} else {	/* original */
 			syscall(__NR_set_acceleration, cur_acceleration);
 		}
 	} else {
 		sensors_event_t buffer[128];
-		ssize_t buf_size = sizeof(buffer)/sizeof(buffer[0]);
+		ssize_t buf_size = sizeof(buffer) / sizeof(buffer[0]);
 		ssize_t count = sensors_device->poll(sensors_device,
-						buffer,
-						buf_size);
+						     buffer,
+						     buf_size);
 		/*
 		 * TODO: You have the acceleration here - scale it and
 		 * send it to kernel
@@ -143,14 +145,19 @@ static int poll_sensor_data(struct sensors_poll_device_t *sensors_device)
 			exit(EXIT_FAILURE);
 		}
 		cur_acceleration = malloc(sizeof(struct dev_acceleration));
-		cur_acceleration->x = (int)(100*buffer[count-1].acceleration.x);
-		cur_acceleration->y = (int)(100*buffer[count-1].acceleration.y);
-		cur_acceleration->z = (int)(100*buffer[count-1].acceleration.z);
+		cur_acceleration->x =
+		    (int) (100 * buffer[count - 1].acceleration.x);
+		cur_acceleration->y =
+		    (int) (100 * buffer[count - 1].acceleration.y);
+		cur_acceleration->z =
+		    (int) (100 * buffer[count - 1].acceleration.z);
 
-		fprintf(stdout, "Acceleration data: %d %d %d\n",cur_acceleration->x,cur_acceleration->y,cur_acceleration->z );
+		fprintf(stdout, "Acceleration data: %d %d %d\n",
+			cur_acceleration->x, cur_acceleration->y,
+			cur_acceleration->z);
 		if (DAEMON_TYPE == 1) {
 			syscall(__NR_accevt_signal, cur_acceleration);
-		} else { /* original */
+		} else {	/* original */
 			syscall(__NR_set_acceleration, cur_acceleration);
 		}
 		free(cur_acceleration);
@@ -171,7 +178,7 @@ static struct dev_acceleration *poll_sensor_data_emulator(void)
 	struct dev_acceleration *ad;
 
 	ad = (struct dev_acceleration *)
-			malloc(sizeof(struct dev_acceleration));
+	    malloc(sizeof(struct dev_acceleration));
 
 	if (!ad) {
 		fprintf(stderr, "error: %s\n", strerror(errno));
@@ -200,7 +207,7 @@ static int open_sensors(struct sensors_module_t **mSensorModule,
 			struct sensors_poll_device_t **mSensorDevice)
 {
 	int err = hw_get_module(SENSORS_HARDWARE_MODULE_ID,
-				(hw_module_t const **)mSensorModule);
+				(hw_module_t const **) mSensorModule);
 
 	if (err) {
 		printf("couldn't load %s module (%s)",
@@ -222,11 +229,12 @@ static int open_sensors(struct sensors_module_t **mSensorModule,
 
 	const struct sensor_t *list;
 	ssize_t count =
-		(*mSensorModule)->get_sensors_list(*mSensorModule, &list);
+	    (*mSensorModule)->get_sensors_list(*mSensorModule, &list);
 	size_t i;
 
-	for (i = 0 ; i < (size_t)count ; i++)
-		(*mSensorDevice)->activate(*mSensorDevice, list[i].handle, 1);
+	for (i = 0; i < (size_t) count; i++)
+		(*mSensorDevice)->activate(*mSensorDevice, list[i].handle,
+					   1);
 	return 0;
 }
 
@@ -238,7 +246,7 @@ static void enumerate_sensors(const struct sensors_module_t *sensors)
 	if (!sensors)
 		printf("going to fail\n");
 
-	nr = sensors->get_sensors_list((struct sensors_module_t *)sensors,
+	nr = sensors->get_sensors_list((struct sensors_module_t *) sensors,
 				       &slist);
 	if (nr < 1 || slist == NULL) {
 		printf("no sensors!\n");
@@ -247,12 +255,13 @@ static void enumerate_sensors(const struct sensors_module_t *sensors)
 
 	for (s = 0; s < nr; s++) {
 		printf("%s (%s) v%d\n\tHandle:%d, type:%d, max:%0.2f, "
-			"resolution:%0.2f \n", slist[s].name, slist[s].vendor,
-		       slist[s].version, slist[s].handle, slist[s].type,
-		       slist[s].maxRange, slist[s].resolution);
+		       "resolution:%0.2f \n", slist[s].name,
+		       slist[s].vendor, slist[s].version, slist[s].handle,
+		       slist[s].type, slist[s].maxRange,
+		       slist[s].resolution);
 
 		if (slist[s].type == SENSOR_TYPE_ACCELEROMETER)
-			effective_linaccel_sensor = slist[s].handle; /*the sensor ID*/
+			effective_linaccel_sensor = slist[s].handle;	/*the sensor ID */
 
 	}
 }
