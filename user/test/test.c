@@ -25,7 +25,14 @@ int detect(int eid, int id) {
 		exit(EXIT_FAILURE);
 	}
 	
-	fprintf(stdout,"%d detected a shake!\n",id );
+	if (id == 0) {
+		fprintf(stdout,"%d detected a horizontal shake!\n", getpid());
+	} else if (id == 1) {
+		fprintf(stdout,"%d detected a vertical shake!\n", getpid());
+	}
+	else if (id == 2) {
+		fprintf(stdout,"%d detected a shake!\n", getpid());
+	}
 	exit(EXIT_SUCCESS);
 }
 
@@ -42,16 +49,16 @@ void init_acc_motion(struct acc_motion * acc,int x,int y, int z,int frq){
 int main(int argc, char const *argv[])
 {
 	/* TODO: decide the value */
-	int t = 10;
-	int frq = 10;
+	int t = 2000;
+	int frq = 15;
 	struct acc_motion xshake;
 	init_acc_motion(&xshake,t,0,0,frq);
 
 	struct acc_motion yshake;
-	init_acc_motion(&yshake,0,t,0,frq);
+	init_acc_motion(&yshake,0,t/3,0,frq);
 
 	struct acc_motion shake;
-	init_acc_motion(&shake,t,t,0,frq);
+	init_acc_motion(&shake,t,t/3,0,frq);
 
 	int xeid, yeid, eid;
 	xeid = syscall(__NR_accevt_create, &xshake);
@@ -61,7 +68,7 @@ int main(int argc, char const *argv[])
 	detect(xeid,0);
 	detect(yeid,1);
 	detect(eid,2);
-	sleep(61);
+	sleep(31);
 	/* close all opened events after a peiod of time */
 	syscall(__NR_accevt_destroy,xeid);
 	syscall(__NR_accevt_destroy,yeid);
