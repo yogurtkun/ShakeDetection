@@ -72,7 +72,7 @@ int main(int argc, char const *argv[])
 	detect(xeid, 0);
 	detect(yeid, 1);
 	detect(eid, 2);
-	sleep(31);
+	sleep(61);
 	/* close all opened events after a peiod of time */
 	syscall(__NR_accevt_destroy, xeid);
 	syscall(__NR_accevt_destroy, yeid);
