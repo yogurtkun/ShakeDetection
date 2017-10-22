@@ -860,11 +860,11 @@ asmlinkage long sys_seccomp(unsigned int op, unsigned int flags,
 			    const char __user *uargs);
 
 
-asmlinkage long sys_accevt_signal(struct dev_acceleration __user * acceleration);
+asmlinkage long sys_accevt_signal(struct dev_acceleration __user *acceleration);
 
-asmlinkage long sys_set_acceleration(struct dev_acceleration __user * acceleration);
+asmlinkage long sys_set_acceleration(struct dev_acceleration __user *acceleration);
 
-asmlinkage long sys_accevt_create(struct acc_motion __user * accleration);
+asmlinkage long sys_accevt_create(struct acc_motion __user *accleration);
 
 asmlinkage long sys_accevt_wait(int __user event_id);
 
