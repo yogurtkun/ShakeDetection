@@ -353,6 +353,12 @@ SYSCALL_DEFINE1(accevt_wait, int, event_id)
 		/*printk("Exit success!!!!\n");*/
 
 		return 0;
+	} else if (wait_event->destroyed) {
+
+		write_unlock(&wait_event->rwlock);
+		write_unlock(&event_list_lock);
+
+		return -EINVAL;
 	} else {
 
 		write_unlock(&wait_event->rwlock);
