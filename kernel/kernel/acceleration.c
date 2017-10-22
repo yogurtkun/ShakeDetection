@@ -72,11 +72,12 @@ static DEFINE_RWLOCK(acceleration_q_lock);
 static LIST_HEAD(event_list);
 static DEFINE_RWLOCK(event_list_lock);
 
-SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
+SYSCALL_DEFINE1(accevt_signal, struct dev_acceleration *, acceleration)
+{
 
-	struct dev_acceleration * acc_data = NULL;
-	struct dev_acceleration * del_data = NULL;
-	struct dev_acceleration * fifo_data = NULL;
+	struct dev_acceleration *acc_data = NULL;
+	struct dev_acceleration *del_data = NULL;
+	struct dev_acceleration *fifo_data = NULL;
 	int num_element;
 	int queue_len;
 	int i;
@@ -85,38 +86,48 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	unsigned int sum_dlt_z = 0;
 	unsigned int motion_cnt = 0;
 	int ret;
-	struct motion_event * e;
-	/*Check the privilegios*/
+	struct motion_event *e;
+	/*Check the privilegios */
 	if (current_cred()->uid != 0)
-	{
 		return -EACCES;
-	}
 
-	if (!kfifo_initialized(&acceleration_queue)){
-		if (kfifo_alloc(&acceleration_queue,sizeof(struct dev_acceleration)* (WINDOW_INIT),GFP_KERNEL) ){
+	if (!kfifo_initialized(&acceleration_queue)) {
+		if (kfifo_alloc
+		    (&acceleration_queue,
+		     sizeof(struct dev_acceleration) * (WINDOW_INIT),
+		     GFP_KERNEL)) {
 			return -ENOMEM;
 		}
 	}
 
-	printk("$$$$$$\n");
-	printk("%d %d %d\n",acceleration->x,acceleration->y,acceleration->z);
-	// printk("%d\n",kfifo_len(&acceleration_queue)/sizeof(struct dev_acceleration));
-	printk("$$$$$$\n");
+	/*
+	   printk("$$$$$$\n");
+	   printk("%d %d %d\n", acceleration->x,
+	   acceleration->y,
+	   acceleration->z);
+	   printk("%d\n",kfifo_len(&acceleration_queue)
+	   /sizeof(struct dev_acceleration));
+	   printk("$$$$$$\n");
+	 */
 
 
-	acc_data = kmalloc(sizeof(struct dev_acceleration),GFP_KERNEL);
-	del_data = kmalloc(sizeof(struct dev_acceleration),GFP_KERNEL);
+	acc_data = kmalloc(sizeof(struct dev_acceleration), GFP_KERNEL);
+	del_data = kmalloc(sizeof(struct dev_acceleration), GFP_KERNEL);
 
-	if(copy_from_user(acc_data,acceleration,sizeof(struct dev_acceleration)))
+	if (copy_from_user
+	    (acc_data, acceleration, sizeof(struct dev_acceleration)))
 		return -EFAULT;
 
 	write_lock(&acceleration_q_lock);
-	if (kfifo_len(&acceleration_queue) == (WINDOW+1)*sizeof(struct dev_acceleration))
-	{
-		ret = kfifo_out(&acceleration_queue,del_data,sizeof(struct dev_acceleration));
+	if (kfifo_len(&acceleration_queue) ==
+	    (WINDOW + 1) * sizeof(struct dev_acceleration)) {
+		ret =
+		    kfifo_out(&acceleration_queue, del_data,
+			      sizeof(struct dev_acceleration));
 	}
 
-	kfifo_in(&acceleration_queue,acc_data,sizeof(struct dev_acceleration));
+	kfifo_in(&acceleration_queue, acc_data,
+		 sizeof(struct dev_acceleration));
 
 	write_unlock(&acceleration_q_lock);
 
@@ -124,42 +135,47 @@ SYSCALL_DEFINE1(accevt_signal,struct dev_acceleration *,acceleration){
 	kfree(acc_data);
 	kfree(del_data);
 
-	fifo_data = kmalloc(sizeof(struct dev_acceleration)*(WINDOW + 1),GFP_KERNEL);
+	fifo_data =
+	    kmalloc(sizeof(struct dev_acceleration) * (WINDOW + 1),
+		    GFP_KERNEL);
 
 	read_lock(&acceleration_q_lock);
 	num_element = kfifo_len(&acceleration_queue);
-	queue_len = num_element/sizeof(struct dev_acceleration);
-	ret = kfifo_out_peek(&acceleration_queue,fifo_data,num_element);
+	queue_len = num_element / sizeof(struct dev_acceleration);
+	ret = kfifo_out_peek(&acceleration_queue, fifo_data, num_element);
 	read_unlock(&acceleration_q_lock);
 
-	
+
 	for (i = 1; i < queue_len; ++i) {
-		unsigned int dlt_x = abs(fifo_data[i].x - fifo_data[i-1].x);
-		unsigned int dlt_y = abs(fifo_data[i].y - fifo_data[i-1].y);
-		unsigned int dlt_z = abs(fifo_data[i].z - fifo_data[i-1].z);
+		unsigned int dlt_x =
+		    abs(fifo_data[i].x - fifo_data[i - 1].x);
+		unsigned int dlt_y =
+		    abs(fifo_data[i].y - fifo_data[i - 1].y);
+		unsigned int dlt_z =
+		    abs(fifo_data[i].z - fifo_data[i - 1].z);
 		sum_dlt_x += dlt_x;
 		sum_dlt_y += dlt_y;
 		sum_dlt_z += dlt_z;
 		if (dlt_x + dlt_y + dlt_z > NOISE)
 			++motion_cnt;
-		// printk("%d %d %d\n",fifo_data[i].x,fifo_data[i].y,fifo_data[i].z);
-		printk("%d %d %d\n",dlt_x, dlt_y, dlt_z);
+
+		/*printk("%d %d %d\n", dlt_x, dlt_y, dlt_z);*/
 	}
-	printk("*******\n");
+	/*printk("*******\n");*/
 	kfree(fifo_data);
 
 	read_lock(&event_list_lock);
-	list_for_each_entry(e,&event_list,list){
-		printk("%d(%d), %d(%d), %d(%d), %d(%d)\n", 
-			sum_dlt_x, e->baseline->dlt_x,
-			sum_dlt_y, e->baseline->dlt_y,
-			sum_dlt_z, e->baseline->dlt_z,
-			motion_cnt, e->baseline->frq);
+	list_for_each_entry(e, &event_list, list) {
+		/*printk("%d(%d), %d(%d), %d(%d), %d(%d)\n",
+		       sum_dlt_x, e->baseline->dlt_x,
+		       sum_dlt_y, e->baseline->dlt_y,
+		       sum_dlt_z, e->baseline->dlt_z,
+		       motion_cnt, e->baseline->frq);*/
 
 		if ((sum_dlt_x >= e->baseline->dlt_x) &&
-		(sum_dlt_y >= e->baseline->dlt_y) &&
-		(sum_dlt_z >= e->baseline->dlt_z) &&
-		(motion_cnt >= e->baseline->frq)) {
+		    (sum_dlt_y >= e->baseline->dlt_y) &&
+		    (sum_dlt_z >= e->baseline->dlt_z) &&
+		    (motion_cnt >= e->baseline->frq)) {
 			write_lock(&e->rwlock);
 			e->triggered = 1;
 			write_unlock(&e->rwlock);
@@ -189,16 +205,18 @@ DEFINE_RWLOCK(lock);
  * @user_mask_ptr: user-space pointer to the new cpu mask
  */
 
-SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, acceleration)
+SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *,
+		acceleration)
 {
-	
-	struct dev_acceleration *tmp = kmalloc(sizeof(struct dev_acceleration), GFP_KERNEL);
 
-	if (current_uid()!=0) {
+	struct dev_acceleration *tmp =
+	    kmalloc(sizeof(struct dev_acceleration), GFP_KERNEL);
+
+	if (current_uid() != 0)
 		return -EACCES;
-	}
 
-	if(copy_from_user(tmp, acceleration, sizeof(struct dev_acceleration)))
+	if (copy_from_user
+	    (tmp, acceleration, sizeof(struct dev_acceleration)))
 		return -EFAULT;
 
 	write_lock(&lock);
@@ -214,8 +232,6 @@ SYSCALL_DEFINE1(set_acceleration, struct dev_acceleration __user *, acceleration
  * sys_accevt_create - Create an event based on motion.
  */
 
-
-// int accevt_create(struct acc_motion __user *acceleration);
 SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 {
 	/* find an available event id */
@@ -235,7 +251,7 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 	}
 	read_unlock(&event_list_lock);
 
-	/* construct the struct event*/
+	/* construct the struct event */
 	e = kmalloc(sizeof(struct motion_event), GFP_KERNEL);
 	e->eid = eid;
 	e->triggered = 0;
@@ -245,7 +261,8 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 	e->baseline = kmalloc(sizeof(struct acc_motion), GFP_KERNEL);
 	INIT_LIST_HEAD(&e->list);
 	rwlock_init(&e->rwlock);
-	if (copy_from_user(e->baseline, acceleration, sizeof(struct acc_motion)))
+	if (copy_from_user
+	    (e->baseline, acceleration, sizeof(struct acc_motion)))
 		return -EFAULT;
 	if (e->baseline->frq > WINDOW)
 		e->baseline->frq = WINDOW;
@@ -257,9 +274,10 @@ SYSCALL_DEFINE1(accevt_create, struct acc_motion __user *, acceleration)
 	return eid;
 }
 
-struct motion_event * find_event(int event_id){
-	struct motion_event * e;
-	list_for_each_entry(e,&event_list,list){
+struct motion_event *find_event(int event_id)
+{
+	struct motion_event *e;
+	list_for_each_entry(e, &event_list, list) {
 		if (e->eid == event_id)
 			return e;
 	}
@@ -272,51 +290,52 @@ struct motion_event * find_event(int event_id){
  * system call number 251
  */
 
-SYSCALL_DEFINE1(accevt_wait, int , event_id){
+SYSCALL_DEFINE1(accevt_wait, int, event_id)
+{
 	DEFINE_WAIT(wait);
-	struct motion_event * wait_event;
+	struct motion_event *wait_event;
 	int ref_times;
-	/*verify if the event_id legal*/
+	/*verify if the event_id legal */
 	read_lock(&event_list_lock);
 	wait_event = find_event(event_id);
-	
 
-	if (wait_event == NULL)
-	{
+
+	if (wait_event == NULL) {
 		read_unlock(&event_list_lock);
 		return -EINVAL;
 	}
 
 	write_lock(&wait_event->rwlock);
 
-	add_wait_queue(&wait_event->wait_queue,&wait);
+	add_wait_queue(&wait_event->wait_queue, &wait);
 	atomic_inc(&wait_event->ref_count);
 	write_unlock(&wait_event->rwlock);
 	read_unlock(&event_list_lock);
 
 
-	while(1){
+	while (1) {
 
 		read_lock(&wait_event->rwlock);
-		if (wait_event->triggered){
+		if (wait_event->triggered) {
 			read_unlock(&wait_event->rwlock);
 			break;
 		}
 		read_unlock(&wait_event->rwlock);
 
-		prepare_to_wait(&wait_event->wait_queue,&wait,TASK_INTERRUPTIBLE);
+		prepare_to_wait(&wait_event->wait_queue, &wait,
+				TASK_INTERRUPTIBLE);
 		schedule();
 	}
 
 	write_lock(&event_list_lock);
 	write_lock(&wait_event->rwlock);
-	finish_wait(&wait_event->wait_queue,&wait);
+	finish_wait(&wait_event->wait_queue, &wait);
 
 	atomic_dec(&wait_event->ref_count);
 	ref_times = atomic_read(&wait_event->ref_count);
 
 
-	if (wait_event->destroyed && ref_times == 0){
+	if (wait_event->destroyed && ref_times == 0) {
 		list_del(&wait_event->list);
 		kfree(wait_event->baseline);
 		kfree(wait_event);
@@ -325,43 +344,39 @@ SYSCALL_DEFINE1(accevt_wait, int , event_id){
 		write_unlock(&event_list_lock);
 
 		return -EINVAL;
-	}
-	else if(ref_times == 0){
+	} else if (ref_times == 0) {
 		wait_event->triggered = 0;
 
 		write_unlock(&wait_event->rwlock);
 		write_unlock(&event_list_lock);
 
-		printk("Exit success!!!!\n");
+		/*printk("Exit success!!!!\n");*/
 
 		return 0;
-	}
-	else{
+	} else {
 
 		write_unlock(&wait_event->rwlock);
 		write_unlock(&event_list_lock);
-		
-		return 0;	
+
+		return 0;
 	}
 
 	return 0;
 }
 
-SYSCALL_DEFINE1(accevt_destroy, int , event_id){
+SYSCALL_DEFINE1(accevt_destroy, int, event_id)
+{
 
-	struct motion_event * to_destroy_event;
+	struct motion_event *to_destroy_event;
 	int ref_times;
-	/*verify if the event_id legal*/
+	/*verify if the event_id legal */
 	read_lock(&event_list_lock);
 	to_destroy_event = find_event(event_id);
 	read_unlock(&event_list_lock);
 
 	if (to_destroy_event == NULL)
-	{
 		return -EINVAL;
-	}
-
-	// printk(KERN_INFO "step 1");
+	/* printk(KERN_INFO "step 1");*/
 
 	write_lock(&event_list_lock);
 
@@ -379,7 +394,7 @@ SYSCALL_DEFINE1(accevt_destroy, int , event_id){
 
 	}
 
-	else if (ref_times == 0){
+	else if (ref_times == 0) {
 		list_del(&to_destroy_event->list);
 		kfree(to_destroy_event->baseline);
 		kfree(to_destroy_event);
@@ -388,37 +403,11 @@ SYSCALL_DEFINE1(accevt_destroy, int , event_id){
 
 	}
 
-	// write_lock(&to_destroy_event->rwlock);
-	// to_destroy_event->destroyed = 1;
-	// write_unlock(&to_destroy_event->rwlock);
-
-
-	// printk(KERN_INFO "step 2");	
-
-	// to_destroy_event->triggered = 1;
-	// wake_up(&to_destroy_event->wait_queue);
-
-	// printk(KERN_INFO "step 3");
-
-
-
-	// int ref_times = atomic_read(&to_destroy_event->ref_count);
-	// if (ref_times == 0) {
-	// list_del(&wait_event->list);
-	
-	// write_lock(&to_destroy_event->rwlock);
-	// kfree(wait_event->baseline);
-	// kfree(wait_event);
-	// write_unlock(&to_destroy_event->rwlock);
-	// }
 
 	write_unlock(&event_list_lock);
 
-	// printk(KERN_INFO "step 4");
 
 	return 0;
 
 
 }
-
-
